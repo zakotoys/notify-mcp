@@ -63,24 +63,6 @@ describe("NotificationService", () => {
 });
 
 describe("MCP registration", () => {
-  it("registers and executes all public tools", async () => {
-    const audio = new FakeAudio(); const desktop = new FakeDesktop();
-    const service = new NotificationService(audio, desktop);
-    type ToolEntry = { handler: (input?: unknown) => Promise<{ content: Array<{ text: string }> }> };
-    const server = createMcpServer(service) as unknown as { _registeredTools: Record<string, ToolEntry>; server: object };
-    expect(server).toBeDefined();
-    expect(server.server).toBeDefined();
-    expect(Object.keys(server._registeredTools)).toEqual(["notify_list_audio", "notify_play_audio", "notify_desktop", "notify"]);
-    const list = await server._registeredTools.notify_list_audio.handler();
-    expect(JSON.parse(list.content[0].text)).toHaveLength(1);
-    const played = await server._registeredTools.notify_play_audio.handler({ audio: "zako" });
-    expect(JSON.parse(played.content[0].text).title).toBe("Audio played");
-    const sent = await server._registeredTools.notify_desktop.handler({ title: "T", message: "M" });
-    expect(sent.content[0].text).toContain("sent");
-    await server._registeredTools.notify.handler({ title: "T", message: "M", audio: "zako" });
-    expect(audio.played.map((track: AudioTrack) => track.id)).toEqual(["zako", "zako"]);
-  });
-
   it("serves tools over the MCP transport", async () => {
     const audio = new FakeAudio();
     const desktop = new FakeDesktop();
@@ -91,6 +73,11 @@ describe("MCP registration", () => {
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
     const tools = await client.listTools();
     expect(tools.tools.map((tool) => tool.name)).toEqual(["notify_list_audio", "notify_play_audio", "notify_desktop", "notify"]);
+    expect(tools.tools.map((tool) => tool.inputSchema.additionalProperties)).toEqual([false, false, false, false]);
+    expect(tools.tools.find((tool) => tool.name === "notify_desktop")?.inputSchema).toMatchObject({
+      properties: { title: { type: "string" }, message: { type: "string" }, subtitle: { type: "string" } },
+      required: ["title", "message"]
+    });
     expect(client.getServerVersion()?.version).toBe(packageInfo.version);
     const listResult = await client.callTool({ name: "notify_list_audio", arguments: {} });
     expect(listResult.isError).not.toBe(true);
@@ -105,7 +92,7 @@ describe("MCP registration", () => {
 
     const desktopResult = await client.callTool({
       name: "notify_desktop",
-      arguments: { title: "Build complete", message: "The build passed", subtitle: "CI" }
+      arguments: { title: "Build complete", message: "The build passed", subtitle: "CI", ignored: true }
     });
     expect(desktopResult.isError).not.toBe(true);
     expect(desktop.sent).toEqual([{ title: "Build complete", message: "The build passed", subtitle: "CI" }]);
