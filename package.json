@@ -1,6 +1,6 @@
 {
   "name": "@zakotoys/notify-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for built-in audio playback and desktop notifications",
   "license": "MIT",
   "repository": {
