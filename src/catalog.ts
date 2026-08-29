@@ -1,7 +1,7 @@
 import type { AudioId, AudioTrack } from "./types.js";
 
 const TRACKS: readonly AudioTrack[] = [
-  { id: "zako", label: "Zako", description: "A short vocal clip", frequencyHz: 0, durationMs: 900, assetFile: "zako.wav" }
+  { id: "zako", label: "Zako", description: "Six repeated vocal calls", frequencyHz: 0, durationMs: 2800, assetFile: "zako.wav" }
 ];
 
 const BY_ID = new Map(TRACKS.map((track) => [track.id, track]));
