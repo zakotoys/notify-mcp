@@ -82,7 +82,9 @@ describe("MCP registration", () => {
   });
 
   it("serves tools over the MCP transport", async () => {
-    const service = new NotificationService(new FakeAudio(), new FakeDesktop());
+    const audio = new FakeAudio();
+    const desktop = new FakeDesktop();
+    const service = new NotificationService(audio, desktop);
     const server = createMcpServer(service);
     const client = new Client({ name: "test-client", version: "1" });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -90,8 +92,32 @@ describe("MCP registration", () => {
     const tools = await client.listTools();
     expect(tools.tools.map((tool) => tool.name)).toEqual(["notify_list_audio", "notify_play_audio", "notify_desktop", "notify"]);
     expect(client.getServerVersion()?.version).toBe(packageInfo.version);
-    const result = await client.callTool({ name: "notify_list_audio", arguments: {} });
-    expect(result.isError).not.toBe(true);
+    const listResult = await client.callTool({ name: "notify_list_audio", arguments: {} });
+    expect(listResult.isError).not.toBe(true);
+    const listContent = listResult.content as Array<{ text: string }>;
+    expect(JSON.parse(listContent[0].text)).toEqual([
+      expect.objectContaining({ id: "zako", assetFile: "zako.wav" })
+    ]);
+
+    const playResult = await client.callTool({ name: "notify_play_audio", arguments: { audio: "zako" } });
+    expect(playResult.isError).not.toBe(true);
+    expect(audio.played.map((track) => track.id)).toEqual(["zako"]);
+
+    const desktopResult = await client.callTool({
+      name: "notify_desktop",
+      arguments: { title: "Build complete", message: "The build passed", subtitle: "CI" }
+    });
+    expect(desktopResult.isError).not.toBe(true);
+    expect(desktop.sent).toEqual([{ title: "Build complete", message: "The build passed", subtitle: "CI" }]);
+
+    const combinedResult = await client.callTool({
+      name: "notify",
+      arguments: { audio: "zako", title: "Reminder", message: "The meeting starts" }
+    });
+    expect(combinedResult.isError).not.toBe(true);
+    expect(audio.played.map((track) => track.id)).toEqual(["zako", "zako"]);
+    expect(desktop.sent.at(-1)).toEqual({ audio: "zako", title: "Reminder", message: "The meeting starts" });
+
     const invalid = await client.callTool({ name: "notify_play_audio", arguments: { audio: "external.wav" } });
     expect(invalid.isError).toBe(true);
     await client.close(); await server.close();

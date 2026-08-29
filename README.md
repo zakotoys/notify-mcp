@@ -2,6 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/%40zakotoys%2Fnotify-mcp?logo=npm&logoColor=white)](https://www.npmjs.com/package/@zakotoys/notify-mcp)
 [![CI](https://github.com/zakotoys/notify-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/zakotoys/notify-mcp/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/zakotoys/notify-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/zakotoys/notify-mcp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **English** | [简体中文](README.zh-CN.md) | [日本語](README.ja-JP.md)
